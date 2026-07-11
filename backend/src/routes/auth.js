@@ -2,7 +2,7 @@ import express from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
-import db from '../db/connection.js';
+import sql from '../db/connection.js';
 import requireAuth from '../middleware/requireAuth.js';
 
 const router = express.Router();
@@ -26,7 +26,9 @@ router.post('/signup', async (req, res) => {
     });
   }
 
-  const existing = await db('couriers').where({ email }).first();
+  const [existing] = await sql`
+    SELECT id FROM couriers WHERE email = ${email}
+  `;
   if (existing) {
     return res.status(409).json({
       error: 'ConflictError',
@@ -38,14 +40,10 @@ router.post('/signup', async (req, res) => {
   const id = uuidv4();
   const password_hash = await bcrypt.hash(password, 10);
 
-  // work_id is required by the DB — use id as a placeholder until profile setup
-  await db('couriers').insert({
-    id,
-    email,
-    name,
-    password_hash,
-    work_id: id,
-  });
+  await sql`
+    INSERT INTO couriers (id, email, name, password_hash, work_id)
+    VALUES (${id}, ${email}, ${name}, ${password_hash}, ${id})
+  `;
 
   const token = jwt.sign({ courierId: id }, process.env.JWT_SECRET, {
     expiresIn: '24h',
@@ -68,7 +66,9 @@ router.post('/login', async (req, res) => {
     });
   }
 
-  const courier = await db('couriers').where({ email }).first();
+  const [courier] = await sql`
+    SELECT * FROM couriers WHERE email = ${email}
+  `;
   if (!courier) {
     return res.status(401).json({
       error: 'UnauthorizedError',

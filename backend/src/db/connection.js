@@ -1,5 +1,22 @@
-import knex from 'knex';
-import config from '../../knexfile.js';
+import dotenv from 'dotenv';
+import postgres from 'postgres';
 
-const environment = process.env.NODE_ENV === 'test' ? 'test' : 'development';
-export default knex(config[environment]);
+dotenv.config();
+
+const connectionString =
+  process.env.DATABASE_URL ||
+  `postgres://${process.env.DB_USER || 'postgres'}:${process.env.DB_PASSWORD || 'postgres'}@${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 5432}/${process.env.DB_NAME || 'delivery_buddy'}`;
+
+const useSsl =
+  process.env.DATABASE_SSL === 'true' ||
+  connectionString.includes('neon.tech') ||
+  connectionString.includes('sslmode=require');
+
+const sql = postgres(connectionString, {
+  ssl: useSsl ? { rejectUnauthorized: false } : false,
+  connection: {
+    application_name: 'delivery_buddy',
+  },
+});
+
+export default sql;
