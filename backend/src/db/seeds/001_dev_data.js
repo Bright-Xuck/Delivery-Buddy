@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import bcrypt from 'bcrypt';
 
 export async function seed(knex) {
   await knex('messages').del();
@@ -11,13 +12,14 @@ export async function seed(knex) {
   const courierId = uuidv4();
   const shiftId = uuidv4();
   const orderId = uuidv4();
+  const password_hash = await bcrypt.hash('test1234', 10);
 
   await knex('couriers').insert({
     id: courierId,
     work_id: '487587',
     name: 'Tyler Teeler',
     email: 'tyler@example.com',
-    password_hash: '$2b$10$abcdefghijklmnopqrstuv',
+    password_hash,
     avatar_url: 'https://example.com/avatar.png',
     team: 'Downtown',
     rate: 25,
