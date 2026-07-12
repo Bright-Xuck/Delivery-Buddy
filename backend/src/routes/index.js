@@ -5,7 +5,6 @@ import courierRoutes from './courier.js';
 import shiftRoutes from './shifts.js';
 import orderRoutes from './orders.js';
 import walletRoutes from './wallet.js';
-import chatRoutes from './chat.js';
 
 const router = express.Router();
 
@@ -14,6 +13,5 @@ router.use('/courier', requireAuth, courierRoutes);
 router.use('/shifts', requireAuth, shiftRoutes);
 router.use('/orders', requireAuth, orderRoutes);
 router.use('/wallet', requireAuth, walletRoutes);
-router.use('/chat', requireAuth, chatRoutes);
 
 export default router;
