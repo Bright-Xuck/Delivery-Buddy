@@ -1,8 +1,11 @@
 # Requirements Specification — Delivery Buddy API
 
-Base URL (local): `http://localhost:3000`
-Base URL (deployed): `<fill in after deploy>`
-Auth: Bearer JWT in `Authorization` header, unless marked **Public**.
+**Base URL (local):** `http://localhost:3000/api`  
+**Base URL (deployed):** `https://<your-deployed-host>/api` *(update after deployment)*  
+**Swagger UI:** `http://localhost:3000/api-docs`  
+**Auth:** Bearer JWT in `Authorization` header, unless marked **Public**.
+
+> All routes below are relative to the base URL. Example: `POST /auth/login` → `POST http://localhost:3000/api/auth/login`
 
 ---
 
@@ -21,8 +24,8 @@ Register a new courier.
 **Errors:** 400 (validation), 409 (email exists)
 
 ### POST /auth/login — Public
-**Body:** `{ "email": "...", "password": "..." }`
-**Response 200:** `{ "token": "jwt...", "courier": {...} }`
+**Body:** `{ "email": "...", "password": "..." }`  
+**Response 200:** `{ "token": "jwt...", "courier": {...} }`  
 **Errors:** 401 (invalid credentials)
 
 ### POST /auth/logout
@@ -52,12 +55,12 @@ Onboarding "Step 2" form — first-time setup.
   "transportation": "BICYCLE", "vehicleNumber": "RE 345 6"
 }
 ```
-**Response 200:** updated courier object
+**Response 200:** updated courier object  
 **Errors:** 400 (transportation not one of BICYCLE|CAR|TRUCK)
 
 ### PATCH /courier/me
 Edit profile (settings screen pencil icon).
-**Body:** any subset of `{ name, avatarUrl }`
+**Body:** any subset of `{ name, avatarUrl }`  
 **Response 200:** updated courier object
 
 ### GET /courier/settings
@@ -67,7 +70,7 @@ Edit profile (settings screen pencil icon).
 ```
 
 ### PATCH /courier/settings
-**Body:** any subset of the above fields
+**Body:** any subset of the above fields  
 **Response 200:** updated settings object
 
 ---
@@ -144,11 +147,11 @@ Full order detail screen.
 **Errors:** 404
 
 ### PATCH /orders/:id/status
-**Body:** `{ "status": "AT_DOOR" }`
-Valid transitions only: `PENDING → DELIVERING → AT_DOOR → DELIVERED`.
+**Body:** `{ "status": "AT_DOOR" }`  
+Valid transitions only: `PENDING → DELIVERING → AT_DOOR → DELIVERED`.  
 On reaching `DELIVERED`: increments `shift.deliveriesCompleted`, creates `EARNING`
 and `TIP` Transaction rows.
-**Response 200:** updated order
+**Response 200:** updated order  
 **Errors:** 400 (invalid transition), 404
 
 ---
@@ -175,9 +178,9 @@ Powers wallet tab header.
 ```
 
 ### POST /wallet/withdraw
-**Body:** `{ "amount": 670 }`
-**Response 200:** `{ "newBalance": 0, "transactionId": "uuid" }`
-(balance after withdrawal must remain >= 0)
+**Body:** `{ "amount": 670 }`  
+**Response 200:** `{ "newBalance": 0, "transactionId": "uuid" }`  
+(balance after withdrawal must remain >= 0)  
 **Errors:** 400 (amount exceeds balance)
 
 ---
@@ -195,7 +198,7 @@ Marks customer messages as `seen: true` on fetch.
 ```
 
 ### POST /orders/:id/messages
-**Body:** `{ "text": "On my way!" }`
+**Body:** `{ "text": "On my way!" }`  
 **Response 201:** created message object
 
 ---
