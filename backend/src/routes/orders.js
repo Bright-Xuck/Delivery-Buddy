@@ -4,6 +4,92 @@ import sql from '../db/connection.js';
 
 const router = express.Router();
 
+/**
+ * @openapi
+ * /orders/current:
+ *   get:
+ *     tags: [Orders]
+ *     summary: Order tied to the active shift
+ *     responses:
+ *       200: { description: Current order or null }
+ *
+ * /orders/next:
+ *   get:
+ *     tags: [Orders]
+ *     summary: Next pending order (order number + ETA)
+ *     responses:
+ *       200: { description: Next order or null }
+ *
+ * /orders/{id}:
+ *   get:
+ *     tags: [Orders]
+ *     summary: Full order detail
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200: { description: Order detail }
+ *       404: { description: Not found }
+ *
+ * /orders/{id}/status:
+ *   patch:
+ *     tags: [Orders]
+ *     summary: Advance order status
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [status]
+ *             properties:
+ *               status: { type: string, enum: [DELIVERING, AT_DOOR, DELIVERED] }
+ *     responses:
+ *       200: { description: Updated order }
+ *       400: { description: Invalid transition }
+ *       404: { description: Not found }
+ *
+ * /orders/{id}/messages:
+ *   get:
+ *     tags: [Orders]
+ *     summary: Get chat messages for an order
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200: { description: Array of messages }
+ *       404: { description: Not found }
+ *   post:
+ *     tags: [Orders]
+ *     summary: Post a chat message
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [text]
+ *             properties:
+ *               text: { type: string }
+ *     responses:
+ *       201: { description: Created message }
+ *       400: { description: text required }
+ *       404: { description: Not found }
+ */
 const NEXT_STATUS = {
   PENDING: 'DELIVERING',
   DELIVERING: 'AT_DOOR',

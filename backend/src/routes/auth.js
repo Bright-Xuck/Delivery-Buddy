@@ -7,6 +7,42 @@ import requireAuth from '../middleware/requireAuth.js';
 
 const router = express.Router();
 
+/**
+ * @openapi
+ * /auth/signup:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Register a new courier
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password, name]
+ *             properties:
+ *               email: { type: string, format: email }
+ *               password: { type: string, minLength: 8 }
+ *               name: { type: string }
+ *     responses:
+ *       201:
+ *         description: Courier created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 token: { type: string }
+ *                 courier:
+ *                   type: object
+ *                   properties:
+ *                     id: { type: string }
+ *                     email: { type: string }
+ *                     name: { type: string }
+ *       400: { description: Validation error }
+ *       409: { description: Email already registered }
+ */
 router.post('/signup', async (req, res) => {
   const { email, password, name } = req.body;
 
@@ -55,6 +91,41 @@ router.post('/signup', async (req, res) => {
   });
 });
 
+/**
+ * @openapi
+ * /auth/login:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Log in a courier
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password]
+ *             properties:
+ *               email: { type: string, format: email }
+ *               password: { type: string }
+ *     responses:
+ *       200:
+ *         description: Logged in
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 token: { type: string }
+ *                 courier:
+ *                   type: object
+ *                   properties:
+ *                     id: { type: string }
+ *                     email: { type: string }
+ *                     name: { type: string }
+ *       400: { description: Validation error }
+ *       401: { description: Invalid credentials }
+ */
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
@@ -100,6 +171,22 @@ router.post('/login', async (req, res) => {
   });
 });
 
+/**
+ * @openapi
+ * /auth/logout:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Log out the current courier
+ *     responses:
+ *       200:
+ *         description: Logged out
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message: { type: string }
+ */
 router.post('/logout', requireAuth, (req, res) => {
   res.json({ message: 'logged out' });
 });

@@ -1,10 +1,96 @@
 import express from 'express';
 import sql from '../db/connection.js';
+import {
+  getCache,
+  setCache,
+  delCache,
+  courierKey,
+} from '../cache.js';
 
 const router = express.Router();
 
 const VALID_TRANSPORT = ['BICYCLE', 'CAR', 'TRUCK'];
 
+/**
+ * @openapi
+ * /courier/me:
+ *   get:
+ *     tags: [Courier]
+ *     summary: Get the current courier's full profile
+ *     responses:
+ *       200:
+ *         description: Profile object
+ *       404: { description: Courier not found }
+ *   patch:
+ *     tags: [Courier]
+ *     summary: Edit profile (name / avatarUrl)
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name: { type: string }
+ *               avatarUrl: { type: string }
+ *     responses:
+ *       200: { description: Updated courier }
+ *       400: { description: No fields provided }
+ *
+ * /courier/me/profile:
+ *   patch:
+ *     tags: [Courier]
+ *     summary: Onboarding profile setup
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [workId, name, team, transportation, vehicleNumber]
+ *             properties:
+ *               workId: { type: string }
+ *               name: { type: string }
+ *               team: { type: string }
+ *               transportation: { type: string, enum: [BICYCLE, CAR, TRUCK] }
+ *               vehicleNumber: { type: string }
+ *     responses:
+ *       200: { description: Updated courier }
+ *       400: { description: Validation error }
+ *       409: { description: workId in use }
+ *
+ * /courier/settings:
+ *   get:
+ *     tags: [Courier]
+ *     summary: Get courier settings
+ *     responses:
+ *       200:
+ *         description: Settings object
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 billingMethod: { type: string }
+ *                 location: { type: string }
+ *                 notificationsEnabled: { type: boolean }
+ *   patch:
+ *     tags: [Courier]
+ *     summary: Update courier settings
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               billingMethod: { type: string }
+ *               location: { type: string }
+ *               notificationsEnabled: { type: boolean }
+ *     responses:
+ *       200: { description: Updated settings }
+ *       400: { description: No fields provided }
+ */
 function toCourier(row) {
   return {
     id: row.id,
@@ -28,6 +114,12 @@ function toSettings(row) {
 }
 
 router.get('/me', async (req, res) => {
+  const cacheKey = courierKey(req.courierId);
+  const cached = getCache(cacheKey);
+  if (cached) {
+    return res.json(cached);
+  }
+
   const [courier] = await sql`
     SELECT * FROM couriers WHERE id = ${req.courierId}
   `;
@@ -40,7 +132,9 @@ router.get('/me', async (req, res) => {
     });
   }
 
-  res.json(toCourier(courier));
+  const result = toCourier(courier);
+  setCache(cacheKey, result);
+  res.json(result);
 });
 
 router.patch('/me/profile', async (req, res) => {
@@ -87,6 +181,7 @@ router.patch('/me/profile', async (req, res) => {
   `;
 
   res.json(toCourier(courier));
+  delCache(courierKey(req.courierId));
 });
 
 router.patch('/me', async (req, res) => {
@@ -124,6 +219,7 @@ router.patch('/me', async (req, res) => {
   }
 
   res.json(toCourier(courier));
+  delCache(courierKey(req.courierId));
 });
 
 router.get('/settings', async (req, res) => {
@@ -215,6 +311,7 @@ router.patch('/settings', async (req, res) => {
   }
 
   res.json(toSettings(courier));
+  delCache(courierKey(req.courierId));
 });
 
 export default router;

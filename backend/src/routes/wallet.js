@@ -1,9 +1,65 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import sql from '../db/connection.js';
+import {
+  getCache,
+  setCache,
+  delCache,
+  walletKey,
+} from '../cache.js';
 
 const router = express.Router();
 
+/**
+ * @openapi
+ * /wallet:
+ *   get:
+ *     tags: [Wallet]
+ *     summary: Wallet balance summary
+ *     responses:
+ *       200:
+ *         description: Balance, tips, rate, level
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 balance: { type: number }
+ *                 tips: { type: number }
+ *                 rate: { type: number }
+ *                 level: { type: integer }
+ *
+ * /wallet/transactions:
+ *   get:
+ *     tags: [Wallet]
+ *     summary: Paginated transaction history
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, default: 1 }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, default: 20 }
+ *     responses:
+ *       200: { description: Transactions + page + hasMore }
+ *
+ * /wallet/withdraw:
+ *   post:
+ *     tags: [Wallet]
+ *     summary: Withdraw from wallet
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [amount]
+ *             properties:
+ *               amount: { type: number }
+ *     responses:
+ *       200: { description: Withdrawal successful }
+ *       400: { description: Amount exceeds balance }
+ */
 async function getBalance(courierId) {
   const [row] = await sql`
     SELECT COALESCE(SUM(amount), 0) AS balance
@@ -14,6 +70,12 @@ async function getBalance(courierId) {
 }
 
 router.get('/', async (req, res) => {
+  const cacheKey = walletKey(req.courierId);
+  const cached = getCache(cacheKey);
+  if (cached) {
+    return res.json(cached);
+  }
+
   const [courier] = await sql`
     SELECT rate, level FROM couriers WHERE id = ${req.courierId}
   `;
@@ -26,12 +88,14 @@ router.get('/', async (req, res) => {
     WHERE courier_id = ${req.courierId}
   `;
 
-  res.json({
+  const result = {
     balance: Number(totals.balance),
     tips: Number(totals.tips),
     rate: courier.rate,
     level: courier.level,
-  });
+  };
+  setCache(cacheKey, result);
+  res.json(result);
 });
 
 router.get('/transactions', async (req, res) => {
@@ -112,6 +176,7 @@ router.post('/withdraw', async (req, res) => {
     newBalance,
     transactionId,
   });
+  delCache(walletKey(req.courierId));
 });
 
 export default router;

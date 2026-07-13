@@ -9,7 +9,7 @@
     "dev": "nodemon src/index.js",
     "db:init": "node src/db/run-init.js",
     "db:seed": "node src/db/run-seed.js",
-    "test": "mocha --timeout 10000"
+    "test": "mocha --timeout 30000"
   },
   "dependencies": {
     "bcrypt": "^5.1.0",

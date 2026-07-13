@@ -4,6 +4,49 @@ import sql from '../db/connection.js';
 
 const router = express.Router();
 
+/**
+ * @openapi
+ * /shifts/start:
+ *   post:
+ *     tags: [Shifts]
+ *     summary: Start a new active shift
+ *     responses:
+ *       201:
+ *         description: Shift started
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id: { type: string }
+ *                 startedAt: { type: string, format: date-time }
+ *                 status: { type: string }
+ *       409: { description: A shift is already active }
+ *
+ * /shifts/stop:
+ *   post:
+ *     tags: [Shifts]
+ *     summary: End the active shift
+ *     responses:
+ *       200: { description: Shift ended }
+ *       404: { description: No active shift }
+ *
+ * /shifts/current:
+ *   get:
+ *     tags: [Shifts]
+ *     summary: Get the active shift (or null)
+ *     responses:
+ *       200:
+ *         description: Active shift or null
+ *
+ * /shifts/last:
+ *   get:
+ *     tags: [Shifts]
+ *     summary: Get the most recent ended shift
+ *     responses:
+ *       200:
+ *         description: Last shift or null
+ */
 function toShift(row) {
   return {
     id: row.id,
