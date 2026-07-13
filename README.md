@@ -1,164 +1,137 @@
 # Delivery Buddy — Backend
 
-A RESTful API for the **Delivery Buddy** courier mobile app. Built with Node.js, Express, and PostgreSQL (raw SQL via `postgres`).
-
-> Frontend data requirements are fully served by the endpoints below. See [`docs/requirements.md`](docs/requirements.md) for the full endpoint contract and [`docs/erd.md`](docs/erd.md) for the entity-relationship diagram.
+This is the API that powers the Delivery Buddy courier app. It's a small Express
+service backed by PostgreSQL. The endpoint contract lives in
+[`docs/requirements.md`](docs/requirements.md) and the data model is in
+[`docs/erd.md`](docs/erd.md).
 
 ## Base URLs
 
-| Environment | Base URL                      | Swagger UI                          |
-|-------------|-------------------------------|-------------------------------------|
-| Local       | `http://localhost:3000/api`   | `http://localhost:3000/api-docs`    |
-| Deployed    | `https://<your-deployed-host>/api` | `https://<your-deployed-host>/api-docs` |
+| Environment | Base URL                                | Swagger UI                                  |
+|-------------|-----------------------------------------|---------------------------------------------|
+| Local       | `http://localhost:3000/api`             | `http://localhost:3000/api-docs`            |
+| Live        | `https://delivery-buddy.onrender.com/api` | `https://delivery-buddy.onrender.com/api-docs` |
 
-All routes (except `/auth/*`) require a **Bearer JWT** in the `Authorization` header.
+Every route except the ones under `/auth` needs a Bearer JWT in the
+`Authorization` header.
 
-## Tech stack
+## Stack
 
-- **Runtime:** Node.js (ESM, `"type": "module"`)
-- **Framework:** Express 4
-- **Database:** PostgreSQL (accessed with the `postgres` client, raw SQL)
-- **Auth:** JWT (`jsonwebtoken`) + `bcrypt` password hashing
-- **Docs:** Swagger / OpenAPI 3 (`swagger-jsdoc` + `swagger-ui-express`)
-- **Caching:** `node-cache` (60s TTL on wallet + profile reads)
-- **Tests:** Mocha + Chai + Supertest
+- Node.js (ESM) + Express 4
+- PostgreSQL, accessed with the `postgres` driver using raw SQL
+- Auth via `jsonwebtoken` + `bcrypt`
+- Swagger docs via `swagger-jsdoc` + `swagger-ui-express`
+- `node-cache` for a short-lived read cache on wallet/profile
+- Tests: Mocha + Chai + Supertest
 
-## Project layout
+## Layout
 
 ```
 backend/
   src/
-    app.js              # Express app + Swagger UI + /api mount
-    index.js            # Entry point (listens on PORT)
-    cache.js            # node-cache instance + key helpers
+    app.js              # app + swagger UI, mounts routes under /api
+    index.js            # starts the server
+    cache.js            # the node-cache instance
     db/
       connection.js     # postgres client (reads DATABASE_URL)
-      init.sql          # schema (CREATE TABLE IF NOT EXISTS)
-      seed.sql          # dev seed data
-      run-init.js       # npm run db:init
-      run-seed.js       # npm run db:seed
+      init.sql          # schema
+      seed.sql          # demo data
+      run-init.js       # used by `npm run db:init`
+      run-seed.js       # used by `npm run db:seed`
     middleware/
-      requireAuth.js    # JWT guard
-      errorHandler.js   # centralized error shape
+      requireAuth.js    # JWT check
+      errorHandler.js   # turns thrown errors into JSON
     routes/
       auth.js courier.js shifts.js orders.js wallet.js
-  test/                 # mocha test suite
+  test/                 # mocha tests
 docs/
-  requirements.md       # endpoint contract
-  erd.md                # ER diagram
+  requirements.md       # what each endpoint does
+  erd.md                # table diagram
 ```
 
-## Prerequisites
+## Requirements
 
-- Node.js 18+
-- A PostgreSQL database (local install, or a hosted provider such as Neon, Render, Railway, Supabase)
+- Node 18 or newer
+- A Postgres database (local or hosted — I used Neon)
 
-## Setup
+## Getting started
 
 ```bash
-# 1. Install dependencies
 cd backend
 npm install
-
-# 2. Configure environment
-cp .env.example .env
-#   then edit .env and set DATABASE_URL (and JWT_SECRET)
+cp .env.example .env      # then open .env and set DATABASE_URL + JWT_SECRET
 ```
 
-### Environment variables
+Environment variables:
 
-| Variable       | Required | Description                                                        |
-|----------------|----------|--------------------------------------------------------------------|
-| `PORT`         | no       | HTTP port (default `3000`)                                         |
-| `JWT_SECRET`   | yes      | Secret used to sign courier tokens. Use a long random string.      |
-| `DATABASE_URL` | yes      | Postgres connection string. Takes precedence over the vars below.  |
-| `DB_USER`      | no*      | Used only if `DATABASE_URL` is absent.                             |
-| `DB_PASSWORD`  | no*      |                                                                    |
-| `DB_HOST`      | no*      |                                                                    |
-| `DB_PORT`      | no*      |                                                                    |
-| `DB_NAME`      | no*      |                                                                    |
-| `DATABASE_SSL` | no       | Set `"true"` for hosted DBs that require SSL.                       |
-| `TEST_DATABASE_URL` | no  | Dedicated DB for the test suite. Falls back to `DATABASE_URL`.     |
+| Variable       | Needed | Notes                                                 |
+|----------------|--------|-------------------------------------------------------|
+| `PORT`         | no     | Defaults to 3000                                      |
+| `JWT_SECRET`   | yes    | Any long random string; used to sign tokens          |
+| `DATABASE_URL` | yes    | Full Postgres URL. If absent, the `DB_*` vars below are used instead |
+| `DB_USER`      | no*    |                                                       |
+| `DB_PASSWORD`  | no*    |                                                       |
+| `DB_HOST`      | no*    |                                                       |
+| `DB_PORT`      | no*    |                                                       |
+| `DB_NAME`      | no*    |                                                       |
+| `DATABASE_SSL` | no     | Set to `true` for hosted databases that require SSL  |
+| `TEST_DATABASE_URL` | no | A separate DB for tests; falls back to `DATABASE_URL` |
 
-\* Only needed when `DATABASE_URL` is not provided.
+\* Only used when `DATABASE_URL` isn't set.
 
-## Database
+## Database setup
 
 ```bash
-# Create tables
-npm run db:init
-
-# (Optional) insert seed data — a demo courier + shift + order + messages
-npm run db:seed
+npm run db:init     # create tables
+npm run db:seed     # optional: a demo courier + shift + order
 ```
 
-Seed demo login: `tyler@example.com` / `test1234`.
+After seeding you can log in with `tyler@example.com` / `test1234`.
 
-## Run
+## Running
 
 ```bash
-npm run dev     # nodemon, auto-restart on change
-# or
+npm run dev     # nodemon
 npm start       # plain node
 ```
 
-Open `http://localhost:3000/api-docs` for the interactive Swagger UI.
+Swagger UI is at `http://localhost:3000/api-docs`.
 
-## Test
+## Tests
 
 ```bash
 cd backend
 npm test
 ```
 
-The suite (`test/auth.test.js`, `test/shifts.test.js`, `test/orders.test.js`, `test/wallet.test.js`)
-covers signup/login validation, duplicate-email, wrong-password, shift rules
-(no two active shifts, stop-with-none → 404), order status transitions (invalid → 400,
-valid → creates EARNING/TIP transactions), wallet withdrawal limits, and the auth guard.
+Four files under `test/` cover auth, shifts, orders and wallet: validation,
+duplicate emails, wrong passwords, the "only one active shift" rule,
+order status transitions (including the EARNING/TIP rows created on delivery),
+withdrawal limits and the auth guard. Each test signs up its own courier and
+deletes it afterwards, so it's safe to point at a dev database.
 
-Tests talk to `TEST_DATABASE_URL` if set, otherwise `DATABASE_URL`. Each test creates and
-cleans up its own courier, so it is safe to run against a development database.
+## Caching
 
-## Caching strategy
+`GET /wallet` and `GET /courier/me` are cached in memory for 60 seconds
+(see `src/cache.js`). Any write that touches a courier — profile/settings
+edits, a withdrawal, or an order being marked delivered — drops that
+courier's cache entry so the next read is fresh. It's deliberately simple;
+if this ever moves to multiple instances, swap `node-cache` for Redis.
 
-`GET /wallet` and `GET /courier/me` are cached in memory for **60 seconds** (`src/cache.js`,
-`node-cache`). Any mutating route touching that courier (`PATCH /courier/me`,
-`PATCH /courier/me/profile`, `PATCH /courier/settings`, `POST /wallet/withdraw`, and the
-order → `DELIVERED` transition) invalidates the relevant cache entry so reads stay consistent.
+## Deploying (Render)
 
-## Deployment
+This is already live at `https://delivery-buddy.onrender.com`, but for
+reference (or to redeploy after changes):
 
-The API is a stateless Node service — deploy it to any platform that runs Node (Render,
-Railway, Fly.io, Heroku, a VM, etc.).
+1. New **Web Service** in Render, point it at this repo, root directory `backend`.
+2. Build: `npm install` — Start: `npm start`.
+3. Add `DATABASE_URL`, `JWT_SECRET`, `PORT`, and `DATABASE_SSL=true` as
+   environment variables.
+4. Once the service is up, run `npm run db:init` once (Render shell or a
+   one-off job) to create the tables.
+5. Push to `main` and Render redeploys automatically if you linked the repo,
+   otherwise hit **Manual Deploy**.
 
-Example — **Render**:
-
-1. Create a new **Web Service**, link this repo, set the root directory to `backend`.
-2. Build command: `npm install`
-3. Start command: `npm start`
-4. Add the environment variables above (`DATABASE_URL`, `JWT_SECRET`, `PORT`, `DATABASE_SSL=true`).
-5. Use the same Postgres instance for `DATABASE_URL`, then run `npm run db:init` once
-   (e.g. via Render's shell or a one-off job) to create the schema.
-6. Once live, your base URL is `https://<your-render-url>/api`. Update it in this README
-   and in `docs/requirements.md`.
-
-Example — **Railway**:
-
-1. `railway init` and `railway up` from the `backend` directory (or link via the dashboard).
-2. Add a Postgres plugin; copy its `DATABASE_URL` into the service variables.
-3. Run `npm run db:init` through `railway run`.
-4. Your live URL becomes `https://<your-railway-url>/api`.
-
-> ⚠️ After deployment, replace `<your-deployed-host>` above and in `docs/requirements.md`
-> with the real host so evaluators can reach the live API and Swagger docs.
-
-## Deliverables
-
-- [x] Requirements spec — `docs/requirements.md`
-- [x] ERD / schema diagram — `docs/erd.md`
-- [x] RESTful API (auth, courier, shifts, orders + chat, wallet)
-- [x] Swagger / OpenAPI docs at `/api-docs`
-- [x] PostgreSQL data layer + seed
-- [x] In-memory caching (wallet + profile)
-- [x] Automated test suite (21 tests)
-- [x] This README (setup / run / test / deploy)
+Live endpoints:
+`https://delivery-buddy.onrender.com/api` and
+`https://delivery-buddy.onrender.com/api-docs`.

@@ -1,7 +1,7 @@
 # Requirements Specification — Delivery Buddy API
 
 **Base URL (local):** `http://localhost:3000/api`  
-**Base URL (deployed):** `https://<your-deployed-host>/api` *(update after deployment)*  
+**Base URL (deployed):** `https://delivery-buddy.onrender.com/api`  
 **Swagger UI:** `http://localhost:3000/api-docs`  
 **Auth:** Bearer JWT in `Authorization` header, unless marked **Public**.
 

@@ -11,7 +11,7 @@ Content-Type: application/json
   "name": "Demo Courier"
 }
 
-### Login (copy the token from the response below into the token variable)
+### Login — grab the token from the response and paste it into @token below
 # @name login
 POST {{backend}}/auth/login
 Content-Type: application/json
@@ -21,7 +21,7 @@ Content-Type: application/json
   "password": "password123"
 }
 
-@token = <paste-bearer-token-here>
+@token = <your-token-here>
 
 ### Get profile
 GET {{backend}}/courier/me

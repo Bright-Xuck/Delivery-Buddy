@@ -9,6 +9,7 @@
     "dev": "nodemon src/index.js",
     "db:init": "node src/db/run-init.js",
     "db:seed": "node src/db/run-seed.js",
+    "db:setup": "node src/db/run-init.js && node src/db/run-seed.js",
     "test": "mocha --timeout 30000"
   },
   "dependencies": {
